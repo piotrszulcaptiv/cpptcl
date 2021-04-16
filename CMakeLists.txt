@@ -25,11 +25,13 @@ endif()
 option(CPPTCL_INSTALL "Generate the install target." ${CPPTCL_MASTER_PROJECT})
 option(CPPTCL_TEST "Build the tests." ${CPPTCL_MASTER_PROJECT})
 option(CPPTCL_EXAMPLES "Build the examples." ${CPPTCL_MASTER_PROJECT})
-option(CPPTCL_NO_TCL_STUBS, "Don't use TCL stubs" ON)
+option(CPPTCL_NO_TCL_STUBS, "Don't use TCL stubs" OFF)
 
-#if (WIN32)
-#set(CPPTCL_NO_TCL_STUBS ON)
-#endif()
+if (WIN32 AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+#note: LLVM for windows seems to have problems linking with TCL stubs lib
+#note: but works fine with the TCL library
+set(CPPTCL_NO_TCL_STUBS ON)
+endif()
 
 if (CPPTCL_NO_TCL_STUBS)
 add_definitions(-DCPPTCL_NO_TCL_STUBS)
@@ -92,6 +94,9 @@ target_include_directories(cpptcl
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	)
 target_include_directories(cpptcl PUBLIC ${TCL_INCLUDE_PATH})
+
+# note: make sure that the TCL/stubs libs exist for the target architecture
+# if they dont' you will get linker errors
 if (NOT CPPTCL_NO_TCL_STUBS)
 target_link_libraries(cpptcl PUBLIC ${TCL_STUB_LIBRARY})
 else()
