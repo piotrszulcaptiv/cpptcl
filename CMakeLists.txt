@@ -13,9 +13,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 message(INFO " cmake build type ${CMAKE_BUILD_TYPE}")
 
-find_package(TCLSH)
-find_package(TCL)
-set(TCLSH_VERSION_STRING, "8.6")
+find_package(Tclsh)
 
 # Determine if cpptcl is built as a subproject (using add_subdirectory)
 # or if it is the master project.
@@ -27,6 +25,18 @@ endif()
 option(CPPTCL_INSTALL "Generate the install target." ${CPPTCL_MASTER_PROJECT})
 option(CPPTCL_TEST "Build the tests." ${CPPTCL_MASTER_PROJECT})
 option(CPPTCL_EXAMPLES "Build the examples." ${CPPTCL_MASTER_PROJECT})
+option(CPPTCL_NO_TCL_STUBS, "Don't use TCL stubs" ON)
+
+#if (WIN32)
+#set(CPPTCL_NO_TCL_STUBS ON)
+#endif()
+
+if (CPPTCL_NO_TCL_STUBS)
+add_definitions(-DCPPTCL_NO_TCL_STUBS)
+find_package(TCL)
+else()
+find_package(TclStub)
+endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND OPTS -stdlib=libc++)
@@ -40,24 +50,14 @@ endif()
 
 include (CTest)
 
-set(TCL_VERSION_MAJOR "8" CACHE STRING "TCL Major version")
-set(TCL_VERSION_MINOR "6" CACHE STRING "TCL Minor version")
-set(TCL_TCLSH "tclsh${TCL_VERSION_MAJOR}.${TCL_VERSION_MINOR}")
-set(TCL_VER "${TCL_VERSION_MAJOR}.${TCL_VERSION_MINOR}")
-set(TCL_VER_BSD "${TCL_VERSION_MAJOR}${TCL_VERSION_MINOR}")
-
-message(INFO " TCL_VER ${TCL_VER}")
-
-find_path(TCL_INCLUDE_PATH tcl.h PATHS c:/tcl/include /usr/local/include/tcl${TCL_VER} /usr/local/include /usr/include/tcl${TCL_VER} /usr/include NO_DEFAULT_PATH)
-find_library(TCL_LIBRARY NAMES tcl${TCL_VER} tcl${TCL_VER_BSD} PATHS c:/tcl/lib /usr/local/lib /usr/lib)
-find_library(TCL_STUB_LIBRARY NAMES tclstub${TCL_VER} tclstub${TCL_VER_BSD} PATHS c:/tcl/lib /usr/local/lib /usr/lib)
+message(INFO " TCL_VER ${TCLSH_VERSION_STRING}")
 
 message(INFO " Tcl include ${TCL_INCLUDE_PATH}")
 message(INFO " Tcl library ${TCL_LIBRARY}")
 message(INFO " Tcl stub library ${TCL_STUB_LIBRARY}")
 message(INFO " Tcl shell ${TCL_TCLSH}")
 
-if(NOT TCL_LIBRARY)
+if(NOT TCL_FOUND)
   message(FATAL_ERROR " Tcl library not found")
 endif()
 
@@ -92,7 +92,12 @@ target_include_directories(cpptcl
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	)
 target_include_directories(cpptcl PUBLIC ${TCL_INCLUDE_PATH})
+if (NOT CPPTCL_NO_TCL_STUBS)
 target_link_libraries(cpptcl PUBLIC ${TCL_STUB_LIBRARY})
+else()
+target_link_libraries(cpptcl PUBLIC ${TCL_LIBRARY})
+endif()
+
 
 add_library(cpptcl_static STATIC ${SRCS} ${HDRS} ${HDRS_DETAILS})
 add_library(cpptcl::cpptcl_static ALIAS cpptcl_static)
