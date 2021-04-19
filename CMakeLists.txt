@@ -117,6 +117,11 @@ target_include_directories(cpptcl_static
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	)
 target_include_directories(cpptcl_static PUBLIC ${TCL_INCLUDE_PATH})
+if (NOT CPPTCL_NO_TCL_STUBS)
+target_link_libraries(cpptcl_static PUBLIC ${TCL_STUB_LIBRARY})
+else()
+target_link_libraries(cpptcl_static PUBLIC ${TCL_LIBRARY})
+endif()
 
 add_library(cpptcl_runtime STATIC ${cpptcl_SOURCE_DIR}/cpptcl_runtime.c)
 add_library(cpptcl::cpptcl_runtime ALIAS cpptcl_runtime)

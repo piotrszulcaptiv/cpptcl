@@ -479,6 +479,19 @@ inline std::ostream & operator<<(std::ostream &os, const object& obj)
 
 // macro for defining loadable module entry point
 // - used for extending Tcl interpreter
+#if (_WIN32)
+
+#define CPPTCL_MODULE(name, i)                       \
+	void name##_cpptcl_Init(Tcl::interpreter &i);    \
+	__declspec(dllexport) extern "C" int name##_Init(Tcl_Interp *interp) { \
+		Tcl_InitStubs(interp, "8.3", 0);             \
+		Tcl::interpreter i(interp, false);           \
+		name##_cpptcl_Init(i);                       \
+		return TCL_OK;                               \
+	}                                                \
+	void name##_cpptcl_Init(Tcl::interpreter &i)
+
+#else
 
 #define CPPTCL_MODULE(name, i)                       \
 	void name##_cpptcl_Init(Tcl::interpreter &i);    \
@@ -489,5 +502,7 @@ inline std::ostream & operator<<(std::ostream &os, const object& obj)
 		return TCL_OK;                               \
 	}                                                \
 	void name##_cpptcl_Init(Tcl::interpreter &i)
+
+#endif
 
 #endif // CPPTCL_INCLUDED
